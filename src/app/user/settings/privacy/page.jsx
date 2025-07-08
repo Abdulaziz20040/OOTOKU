@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { IoCheckmarkSharp, IoChevronDownOutline } from "react-icons/io5";
 
