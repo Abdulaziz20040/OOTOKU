@@ -1,8 +1,9 @@
 "use client";
+
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation"; // ✅ to'g'ri hook
 import React from "react";
-import { Breadcrumb } from "antd"; // O'zingizga kerakli komponentni import qiling
+import { Breadcrumb } from "antd";
 
 const pathNameMap = {
   "": "Bosh sahifa",
@@ -44,10 +45,8 @@ const pathNameMap = {
 };
 
 const DynamicBreadcrumb = () => {
-  const router = useRouter(); // useRouter hookini chaqirish
-  const pathSnippets = router.asPath
-    ? router.asPath.split("/").filter((i) => i)
-    : []; // current pathni olish
+  const pathname = usePathname(); // ✅ to'g'ri yo'lni olish
+  const pathSnippets = pathname.split("/").filter((i) => i);
 
   const extraBreadcrumbItems = pathSnippets.map((_, index) => {
     const url = `/${pathSnippets.slice(0, index + 1).join("/")}`;
@@ -59,7 +58,6 @@ const DynamicBreadcrumb = () => {
     };
   });
 
-  // Breadcrumbning yangi usulidan foydalanish
   const breadcrumbItems = [
     {
       key: "/",
