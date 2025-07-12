@@ -54,7 +54,7 @@ function Pricacy({
                       className="flex items-center justify-between text-black p-[5px] w-full text-left"
                       onClick={() => selectOption(option)}
                     >
-                      {option}{" "}
+                      .{option}{" "}
                       {selectedOption === option && (
                         <IoCheckmarkSharp className=" text-[#50D1F9]" />
                       )}

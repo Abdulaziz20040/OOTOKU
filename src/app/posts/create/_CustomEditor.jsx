@@ -17,17 +17,28 @@ import {
   Table,
   Heading,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import "../../../app/globals.css";
 
 const CustomEditor = ({ onChange, onTitleChange }) => {
+  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const editorRef = useRef(null);
-  const menuRef = useRef(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("Ma'lumot kiriting...");
+  const editorRef = useRef(null);
+  const menuRef = useRef(null);
+  const textareaRef = useRef(null);
+  const [plusPosition, setPlusPosition] = useState({
+    top: 0,
+    left: 0,
+    visible: false,
+    menuTop: 0,
+    menuLeft: 0,
+  });
 
+  // 🧠 Localdan saqlangan malumotlar
   useEffect(() => {
     const savedTitle = localStorage.getItem("postTitle");
     const savedContent = localStorage.getItem("editorContent");
@@ -52,8 +63,13 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
   }, []);
 
   const clearEditor = () => {
+    setTitle("");
     setContent("Ma'lumot kiriting...");
+    localStorage.removeItem("postTitle");
     localStorage.removeItem("editorContent");
+    if (editorRef.current) {
+      editorRef.current.innerHTML = "Ma'lumot kiriting...";
+    }
   };
 
   const formatText = (command, value = null) => {
@@ -110,14 +126,11 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
       setShowMenu(false);
       setShowHeadingMenu(false);
     } catch (error) {
-      console.error("❌ Rasm yuklashda xatolik:", error.message);
       alert("Rasm yuklanmadi: " + error.message);
     }
   };
 
-  const handleInput = (e) => {
-    setContent(e.currentTarget.innerHTML);
-  };
+  const handleInput = (e) => setContent(e.currentTarget.innerHTML);
 
   const handleFocus = () => {
     if (!editorRef.current) return;
@@ -132,10 +145,6 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
       editorRef.current.innerText = "Ma'lumot kiriting...";
     }
     editorRef.current.style.backgroundColor = "transparent";
-  };
-
-  const handleTitleChange = (e) => {
-    setTitle(e.target.value);
   };
 
   useEffect(() => {
@@ -153,31 +162,82 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const updatePlusIconPosition = () => {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const rect = range.startContainer.parentElement?.getBoundingClientRect();
+
+      if (rect && editorRef.current?.contains(range.startContainer)) {
+        const iconLeft = rect.left - 30;
+        const iconTop = rect.top + window.scrollY;
+
+        setPlusPosition({
+          top: iconTop,
+          left: iconLeft,
+          visible: true,
+          menuTop: iconTop + 40,
+          menuLeft: iconLeft,
+        });
+      } else {
+        setPlusPosition((prev) => ({ ...prev, visible: false }));
+      }
+    };
+
+    document.addEventListener("selectionchange", updatePlusIconPosition);
+    return () =>
+      document.removeEventListener("selectionchange", updatePlusIconPosition);
+  }, []);
+
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = textarea.scrollHeight + "px";
+    }
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [title]);
+
   return (
     <div className="relative w-full mt-6">
       <textarea
+        ref={textareaRef}
         value={title}
         onChange={handleTitleChange}
         placeholder="Sarlavha kiriting"
-        className="w-full p-2 mt-4 text-2xl font-semibold rounded outline-none"
+        className="w-full p-2 mt-4 overflow-hidden text-2xl font-semibold rounded outline-none resize-none"
+        rows={1}
       />
 
       <div className="relative flex items-start w-full gap-2 mt-4">
-        <button
-          className="z-20 p-2 text-white bg-blue-600 rounded-full shadow-md absolute left-[-28px] bottom-[12px] menu-toggle cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-        >
-          <Plus size={20} />
-        </button>
+        {plusPosition.visible && (
+          <button
+            className="fixed z-40 p-2 -ml-6 text-white bg-blue-600 rounded-full shadow-md cursor-pointer menu-toggle"
+            style={{ top: plusPosition.top, left: plusPosition.left }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+          >
+            <Plus size={20} />
+          </button>
+        )}
 
         <div
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning={true}
-          className="w-full min-h-[120px] border border-gray-300 p-3 focus:outline-none text-lg font-sans overflow-y-auto rounded-md bg-white"
+          className="w-full min-h-[120px] p-3 focus:outline-none text-lg font-sans overflow-y-auto rounded-md "
           onInput={handleInput}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -188,7 +248,11 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
         {showMenu && (
           <div
             ref={menuRef}
-            className="absolute z-30 w-52 bg-white rounded-md shadow-lg top-[100%] left-0 mt-2 p-2 grid grid-cols-1 gap-2 max-h-64 overflow-y-auto cursor-pointer"
+            className="fixed z-50 grid w-56 grid-cols-1 gap-2 p-3 overflow-y-auto bg-white border border-gray-200 shadow-xl rounded-xl max-h-72"
+            style={{
+              top: plusPosition.menuTop,
+              left: plusPosition.menuLeft,
+            }}
           >
             <button onClick={() => formatText("bold")} className="menu-btn">
               <Bold size={16} /> Qalin
@@ -240,12 +304,12 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
             </button>
 
             {showHeadingMenu && (
-              <div className="flex flex-wrap gap-2 pl-2">
+              <div className="flex flex-wrap gap-2 pl-6">
                 {Array.from({ length: 5 }, (_, i) => (
                   <button
                     key={i}
                     onClick={() => formatText("formatBlock", `h${i + 1}`)}
-                    className="px-2 py-1 bg-gray-100 rounded"
+                    className="px-2 py-1 text-xs font-semibold text-gray-600 transition bg-gray-100 rounded hover:bg-blue-100 hover:text-blue-600"
                   >
                     H{i + 1}
                   </button>
@@ -262,6 +326,7 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
             >
               <Link size={16} /> Link
             </button>
+
             <label className="relative cursor-pointer menu-btn">
               <Palette size={16} /> Rang
               <input
@@ -270,6 +335,7 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
                 onChange={(e) => formatText("foreColor", e.target.value)}
               />
             </label>
+
             <label className="cursor-pointer menu-btn">
               <Image size={16} /> Rasm
               <input
@@ -279,6 +345,7 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
                 onChange={handleFileUpload}
               />
             </label>
+
             <button
               onClick={() =>
                 formatText(
@@ -319,7 +386,10 @@ const CustomEditor = ({ onChange, onTitleChange }) => {
             />
             <button
               className="px-4 py-2 mt-4 text-white bg-red-500 rounded"
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                setShowModal(false);
+                router.push("/");
+              }}
             >
               Yopish
             </button>

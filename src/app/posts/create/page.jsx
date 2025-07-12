@@ -6,6 +6,7 @@ import { IoChevronDownSharp } from "react-icons/io5";
 import { CiSearch } from "react-icons/ci";
 import { useRouter } from "next/navigation";
 import CustomEditor from "./_CustomEditor";
+import { Link } from "lucide-react";
 
 // ✅ TYPE mapping: Faqat 3 xil formatga cheklangan
 const typeMapping = {
@@ -117,7 +118,7 @@ function CreatePost() {
   return (
     <div className="px-10">
       <div
-        onClick={() => router.push(-1)}
+        onClick={() => router.back()} // ✅ router.push(-1) emas
         className="flex items-center pb-3 space-x-4 cursor-pointer"
       >
         <BsArrowLeft className="text-[20px]" />
@@ -218,18 +219,17 @@ function CreatePost() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6 w-[500px]">
-        <button className="w-full p-3 text-black bg-gray-300 rounded-lg cursor-pointer">
-          Bekor qilish
-        </button>
+      <div className="flex justify-end gap-3 mt-6">
+        <Link href="/">
+          <button className="w-[150px] p-3 text-black bg-gray-300 rounded-lg cursor-pointer">
+            Bekor qilish
+          </button>
+        </Link>
         <button
           onClick={handleSubmit}
-          className="w-full p-3 text-white bg-blue-500 rounded-lg cursor-pointer"
+          className="w-[150px] p-3 text-white bg-blue-500 rounded-lg cursor-pointer"
         >
           Saqlash
-        </button>
-        <button className="w-full p-3 text-white bg-yellow-500 rounded-lg cursor-pointer">
-          Keyinroq saqlash
         </button>
       </div>
     </div>
